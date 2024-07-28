@@ -27,6 +27,7 @@
 #include <tchar.h>
 #include <stdio.h>
 #include "imgexp.h"
+#include "limg2.h"
 
 /* often used */
 #define NELEMS(a)  (sizeof(a) / sizeof((a)[0]))
@@ -40,6 +41,12 @@ static INT_PTR CALLBACK ImgExpProc(HWND, UINT, WPARAM, LPARAM);
 /** Global variables ********************************************************/
 
 static HANDLE ghInstance;
+
+HDC idc=NULL;
+HBITMAP ibmp;
+HBRUSH hbrush;
+RECT irct;
+
 
 
 /****************************************************************************
@@ -98,19 +105,55 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	ccx.hCursor = LoadCursor(NULL,IDC_CROSS);
     if (!RegisterClassEx(&ccx))
         return 1;
-	OutputDebugString("5");
 	
     /* The user interface is a modal dialog box */
     return DialogBox(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)MainDlgProc);
 }
 
+/* helper functions */
+void dbg_num(char *msg, unsigned long int n)
+{
+	char dbuf[1024];
+	snprintf(dbuf,1024,"%s: 0x%x (%d)",msg,n,n);
+	OutputDebugStringA(dbuf);
+}
+
+void dbg_dbl(char *msg, double n)
+{
+	char dbuf[1024];
+	snprintf(dbuf,1024,"%s: %.4f",msg,n);
+	OutputDebugStringA(dbuf);
+}
+
+
+
 /**********************************
  * application specific functions *
  **********************************/
+int init_idc(HWND hDlg)
+{
+	HDC cdc;
+	HWND hic=GetDlgItem(hDlg,ID_IMG);
+	if(GetClientRect(hic,&irct)==0) dbg_num("GetClientRect failed, lasterror is",GetLastError());
+	dbg_num("Rect left",irct.left);
+	dbg_num("Rect top",irct.left);
+	dbg_num("Rect right",irct.left);
+	dbg_num("Rect bottom",irct.left);
+	cdc=GetDC(hic);
+	idc=CreateCompatibleDC(cdc);
+	ibmp=CreateCompatibleBitmap(cdc,irct.right,irct.bottom);
+	SelectObject(idc,ibmp);
+	hbrush=CreateSolidBrush(0xffffff);
+	SelectObject(idc,hbrush);
+	Rectangle(idc,irct.left,irct.top,irct.right,irct.bottom);
+	ReleaseDC(hic,cdc);
+	return 0;
+}
+
 int do_something(HWND hDlg)
 {
-	OutputDebugString("something");
-	SetDlgItemText(hDlg,ID_EDH,"Did something");
+	OutputDebugString(_T("something"));
+	SetDlgItemText(hDlg,ID_EDH,_T("Did something"));
 	return 0;
 }
 
@@ -132,7 +175,7 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     {
         case WM_INITDIALOG:
 			/* code to initialize the dialog. */
-            
+			init_idc(hwndDlg);        
             return TRUE;
 
         case WM_SIZE:
@@ -164,5 +207,16 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
 static INT_PTR CALLBACK ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	PAINTSTRUCT ps;
+	HDC wdc;
+    switch (uMsg)
+    {
+		case WM_PAINT:
+			if(!idc) return DefWindowProc(hWnd,uMsg,wParam,lParam);
+			wdc=BeginPaint(hWnd,&ps);
+			BitBlt(wdc,0,0,irct.right,irct.bottom,idc,0,0,SRCCOPY);
+			EndPaint(hWnd,&ps);
+			return TRUE;
+	}
 	return DefWindowProc(hWnd,uMsg,wParam,lParam);
 }

@@ -13,10 +13,10 @@ CAPTION "Skeleton"
 CLASS "hwkimgClass"
 FONT 8, "MS Shell Dlg", 0, 0, 1
 {
-  CONTROL "Result:", 4003, "Static", SS_RIGHT|WS_GROUP, 4, 12, 50, 8
+  CONTROL "Result:", 5001, "Static", SS_RIGHT|WS_GROUP, 4, 12, 50, 8
   CONTROL "", ID_EDH, "Edit", ES_AUTOHSCROLL|WS_BORDER|WS_TABSTOP, 60, 12, 200, 12
   CONTROL "Do Something", ID_DOIT, "Button", WS_TABSTOP, 92, 184, 92, 15
-  CONTROL "", ID_IMG, "hwkimgexp",NOT 0x00830000|0x50000000, 12, 28, 260, 152
+  CONTROL "", ID_IMG, "hwkimgexp",0x00000000, 12, 28, 260, 152
 }
 
 IDR_ICO_MAIN ICON "skel.ico"

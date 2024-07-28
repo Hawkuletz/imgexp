@@ -5,4 +5,4 @@
 
 #define ID_DOIT		4001
 #define ID_EDH		4002
-#define ID_IMG		4002
+#define ID_IMG		4003
