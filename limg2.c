@@ -2,6 +2,8 @@
 #include <tchar.h>
 #include <stdio.h>
 
+/* note to self: check https://learn.microsoft.com/en-us/windows/win32/api/wincodec/nf-wincodec-iwicformatconverter-initialize */
+
 /* helper debug */
 static void dbg_num(char *msg, unsigned long int n)
 {
