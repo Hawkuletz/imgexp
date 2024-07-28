@@ -35,7 +35,7 @@
 /** Prototypes **************************************************************/
 
 static INT_PTR CALLBACK MainDlgProc(HWND, UINT, WPARAM, LPARAM);
-static WNDPROC ImgExpProc(HWND, UINT, WPARAM, LPARAM);
+static INT_PTR CALLBACK ImgExpProc(HWND, UINT, WPARAM, LPARAM);
 
 /** Global variables ********************************************************/
 
@@ -71,13 +71,10 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     icc.dwICC = ICC_WIN95_CLASSES;
     InitCommonControlsEx(&icc);
 
-	OutputDebugString("1");
-
     /* Get system dialog information */
     wcx.cbSize = sizeof(wcx);
     if (!GetClassInfoEx(NULL, MAKEINTRESOURCE(32770), &wcx))
         return 0;
-	OutputDebugString("2");
 
     /* Add our own stuff */
     wcx.hInstance = hInstance;
@@ -85,7 +82,6 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     wcx.lpszClassName = _T("hwkimgClass");
     if (!RegisterClassEx(&wcx))
         return 0;
-	OutputDebugString("3");
 
 	/* custom control */
 	ccx.cbSize = sizeof(ccx);
@@ -100,15 +96,10 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     ccx.hIcon = NULL;
 	ccx.hIconSm = NULL;
 	ccx.hCursor = LoadCursor(NULL,IDC_CROSS);
-	OutputDebugString("4");
     if (!RegisterClassEx(&ccx))
         return 1;
 	OutputDebugString("5");
 	
-	WNDCLASS wcr;
-	GetClassInfo(hInstance,"hwkimgexp",&wcr);
-	OutputDebugString(wcr.lpszClassName);
-
     /* The user interface is a modal dialog box */
     return DialogBox(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)MainDlgProc);
 }
@@ -171,7 +162,7 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     return FALSE;
 }
 
-static WNDPROC ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	return FALSE;
+	return DefWindowProc(hWnd,uMsg,wParam,lParam);
 }
