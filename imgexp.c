@@ -41,13 +41,14 @@ static INT_PTR CALLBACK ImgExpProc(HWND, UINT, WPARAM, LPARAM);
 /** Global variables ********************************************************/
 
 static HANDLE ghInstance;
-
+int coinited=0;
 HDC idc=NULL;
 HBITMAP ibmp;
 HBRUSH hbrush;
 RECT irct;
 
-
+HDC img_dc=NULL;
+HBITMAP img_bmp=NULL;
 
 /****************************************************************************
  *                                                                          *
@@ -136,9 +137,9 @@ int init_idc(HWND hDlg)
 	HWND hic=GetDlgItem(hDlg,ID_IMG);
 	if(GetClientRect(hic,&irct)==0) dbg_num("GetClientRect failed, lasterror is",GetLastError());
 	dbg_num("Rect left",irct.left);
-	dbg_num("Rect top",irct.left);
-	dbg_num("Rect right",irct.left);
-	dbg_num("Rect bottom",irct.left);
+	dbg_num("Rect top",irct.top);
+	dbg_num("Rect right",irct.right);
+	dbg_num("Rect bottom",irct.bottom);
 	cdc=GetDC(hic);
 	idc=CreateCompatibleDC(cdc);
 	ibmp=CreateCompatibleBitmap(cdc,irct.right,irct.bottom);
@@ -152,8 +153,15 @@ int init_idc(HWND hDlg)
 
 int do_something(HWND hDlg)
 {
+	wchar_t fn[256];
 	OutputDebugString(_T("something"));
-	SetDlgItemText(hDlg,ID_EDH,_T("Did something"));
+	GetDlgItemText(hDlg,ID_EDH,fn,255);
+	fn[255]=0;
+	load_img(fn,coinited,&img_dc,&img_bmp);
+	coinited=1;
+//	load_img(L"retro_t.png",0,&img_dc,&img_bmp);
+	if(img_dc==NULL) OutputDebugStringA("no img_dc");
+	InvalidateRect(GetDlgItem(hDlg,ID_IMG),&irct,FALSE);
 	return 0;
 }
 
@@ -209,12 +217,24 @@ static INT_PTR CALLBACK ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 {
 	PAINTSTRUCT ps;
 	HDC wdc;
+	BITMAP bmp;
+
+;
     switch (uMsg)
     {
 		case WM_PAINT:
-			if(!idc) return DefWindowProc(hWnd,uMsg,wParam,lParam);
+			if(!idc && !img_dc) return DefWindowProc(hWnd,uMsg,wParam,lParam);
 			wdc=BeginPaint(hWnd,&ps);
-			BitBlt(wdc,0,0,irct.right,irct.bottom,idc,0,0,SRCCOPY);
+			if(img_dc)
+			{
+				GetObject(img_bmp,sizeof(bmp),&bmp);
+				
+				StretchBlt(wdc,0,0,irct.right,irct.bottom,img_dc,0,0,bmp.bmWidth,bmp.bmHeight,SRCCOPY);
+			}
+			else
+			{
+				BitBlt(wdc,0,0,irct.right,irct.bottom,idc,0,0,SRCCOPY);
+			}
 			EndPaint(hWnd,&ps);
 			return TRUE;
 	}
