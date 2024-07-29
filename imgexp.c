@@ -42,7 +42,6 @@ HBRUSH hbrush;
 RECT irct;
 
 HDC img_dc=NULL;
-HBITMAP img_bmp=NULL;
 
 /****************************************************************************
  *                                                                          *
@@ -149,7 +148,7 @@ int do_something(HWND hDlg)
 	OutputDebugString(_T("something"));
 	GetDlgItemText(hDlg,ID_EDH,fn,255);
 	fn[255]=0;
-	load_img(fn,&img_dc,&img_bmp);
+	load_img(fn,&img_dc);
 //	load_img(L"retro_t.png",0,&img_dc,&img_bmp);
 	if(img_dc==NULL) OutputDebugStringA("no img_dc");
 	InvalidateRect(GetDlgItem(hDlg,ID_IMG),&irct,FALSE);

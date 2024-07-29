@@ -15,7 +15,7 @@ static void dbg_num(char *msg, unsigned long int n)
 }
 
 
-int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
+int load_img(wchar_t *fn, HDC *dhdc)
 {
 	int rv=0;
 	HRESULT hr;
@@ -23,7 +23,6 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 	IWICImagingFactory *iif=NULL;
 	IWICBitmapDecoder *iwbdec=NULL;
 	IWICBitmapFrameDecode *iwbframe=NULL;
-
 	IWICFormatConverter *ifc=NULL;
 	unsigned int fc;
 
@@ -169,6 +168,5 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 	
 	SelectObject(hdci,hBMP);
 	*dhdc=hdci;
-	*dhbmp=hBMP;
 	return rv;
 }
