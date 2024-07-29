@@ -1,4 +1,6 @@
+#define WIN32_LEAN_AND_MEAN
 #include <wincodec.h>
+#include <stdlib.h>
 #include <tchar.h>
 #include <stdio.h>
 
@@ -22,13 +24,17 @@ int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
 	IWICImagingFactory *iif;
 	IWICBitmapDecoder *iwbdec;
 	IWICBitmapFrameDecode *iwbframe;
+
+	IWICFormatConverter *ifc=NULL;
+
+
 	IWICComponentInfo *tci;		/* "temp" */
 	IWICPixelFormatInfo *pfi;	/* pixel format info interface */
 	WICPixelFormatGUID pfuid;
 
-    IWICColorTransform *pcoltr = NULL;
+/*    IWICColorTransform *pcoltr = NULL;
     IWICColorContext *pcsrc = NULL;
-    IWICColorContext *pcdst = NULL;
+    IWICColorContext *pcdst = NULL; */
 
 
 
@@ -69,7 +75,7 @@ int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
 		return -1;
 	}
 #ifdef DEBUG
-	int fc;
+	unsigned int fc;
 	iwbdec->lpVtbl->GetFrameCount(iwbdec,&fc);
 	dbg_num("Frame count: ",fc);
 #endif
@@ -116,51 +122,72 @@ int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
 
 	/* color transform */
 	/* create objects */
-	hr=iif->lpVtbl->CreateColorTransformer(iif,&pcoltr);
+//	hr=iif->lpVtbl->CreateColorTransformer(iif,&pcoltr);
+//	if(hr!=S_OK)
+//	{
+//		swprintf(buf,256,L"CreateColorTransformer returned error: %d, 0x%x",hr,hr);
+//		OutputDebugString(buf);
+//		return -1;
+//	}
+//	hr=iif->lpVtbl->CreateColorContext(iif,&pcsrc);
+//	if(hr!=S_OK)
+//	{
+//		swprintf(buf,256,L"CreateColorContext returned error: %d, 0x%x",hr,hr);
+//		OutputDebugString(buf);
+//		return -1;
+//	}
+//	hr=iif->lpVtbl->CreateColorContext(iif,&pcdst);
+//	if(hr!=S_OK)
+//	{
+//		swprintf(buf,256,L"CreateColorContext returned error: %d, 0x%x",hr,hr);
+//		OutputDebugString(buf);
+//		return -1;
+//	}
+//
+//	/* initialize ColorContexts */
+//	hr=pcsrc->lpVtbl->InitializeFromExifColorSpace(pcsrc,1);
+//	if(hr!=S_OK)
+//	{
+//		swprintf(buf,256,L"ColorContext init returned error: %d, 0x%x",hr,hr);
+//		OutputDebugString(buf);
+//		return -1;
+//	}
+//	hr=pcdst->lpVtbl->InitializeFromExifColorSpace(pcdst,1);
+//	if(hr!=S_OK)
+//	{
+//		swprintf(buf,256,L"ColorContext init returned error: %d, 0x%x",hr,hr);
+//		OutputDebugString(buf);
+//		return -1;
+//	}
+//
+//	hr=pcoltr->lpVtbl->Initialize(pcoltr,(IWICBitmapSource *)iwbframe,pcsrc,pcdst,&GUID_WICPixelFormat32bppBGRA);
+//	if(hr!=S_OK)
+//	{
+//		swprintf(buf,256,L"Initialize color transform returned error: %d, 0x%x",hr,hr);
+//		OutputDebugString(buf);
+//		return -1;
+//	}
+//	
+	/* format converter */
+	hr=iif->lpVtbl->CreateFormatConverter(iif,&ifc);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CreateColorTransformer returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
-	}
-	hr=iif->lpVtbl->CreateColorContext(iif,&pcsrc);
-	if(hr!=S_OK)
-	{
-		swprintf(buf,256,L"CreateColorContext returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
-	}
-	hr=iif->lpVtbl->CreateColorContext(iif,&pcdst);
-	if(hr!=S_OK)
-	{
-		swprintf(buf,256,L"CreateColorContext returned error: %d, 0x%x",hr,hr);
+		swprintf(buf,256,L"CreateFormatConverter returned error: %d, 0x%x",hr,hr);
 		OutputDebugString(buf);
 		return -1;
 	}
 
-	/* initialize ColorContexts */
-	hr=pcsrc->lpVtbl->InitializeFromExifColorSpace(pcsrc,1);
+//   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGRA,WICBitmapDitherTypeNone,NULL,0.0f,0);
+   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGR,WICBitmapDitherTypeNone,NULL,0.0f,0);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"ColorContext init returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
-	}
-	hr=pcdst->lpVtbl->InitializeFromExifColorSpace(pcdst,1);
-	if(hr!=S_OK)
-	{
-		swprintf(buf,256,L"ColorContext init returned error: %d, 0x%x",hr,hr);
+		swprintf(buf,256,L"CreateFormatConverter->Initialize returned error: %d, 0x%x",hr,hr);
 		OutputDebugString(buf);
 		return -1;
 	}
 
-	hr=pcoltr->lpVtbl->Initialize(pcoltr,(IWICBitmapSource *)iwbframe,pcsrc,pcdst,&GUID_WICPixelFormat32bppBGRA);
-	if(hr!=S_OK)
-	{
-		swprintf(buf,256,L"Initialize color transform returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
-	}
+	
+
 	/* GDI */
 	/* Device Context */
 	hdci=CreateCompatibleDC(0);
@@ -205,8 +232,8 @@ int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
 	OutputDebugStringA("done pxbuf2"); */
 
 	/* since we forced bpp to 32 we know that stride must be 4*width */
-	hr=pcoltr->lpVtbl->CopyPixels(pcoltr,NULL,4*w,4*w*h,pxdata);
-//	hr=iwbframe->lpVtbl->CopyPixels(iwbframe,NULL,4*w,4*w*h,pxdata);
+	hr=ifc->lpVtbl->CopyPixels(ifc,NULL,4*w,4*w*h,pxdata);
+//	hr=pcoltr->lpVtbl->CopyPixels(pcoltr,NULL,4*w,4*w*h,pxdata);
 	if(hr!=S_OK)
 	{
 		swprintf(buf,256,L"CopyPixels returned error: %d, 0x%x",hr,hr);

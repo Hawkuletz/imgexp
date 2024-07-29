@@ -17,13 +17,11 @@
 #define NOSERVICE
 #define NOMCX
 #define NOIME */
-#define __STDC_WANT_LIB_EXT2__ 1
-
-#define USE_OWN_SHA1
 
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
+#include <stdlib.h>
 #include <tchar.h>
 #include <stdio.h>
 #include "imgexp.h"
@@ -228,7 +226,7 @@ static INT_PTR CALLBACK ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			if(img_dc)
 			{
 				GetObject(img_bmp,sizeof(bmp),&bmp);
-				
+				SetStretchBltMode(wdc,HALFTONE);
 				StretchBlt(wdc,0,0,irct.right,irct.bottom,img_dc,0,0,bmp.bmWidth,bmp.bmHeight,SRCCOPY);
 			}
 			else
