@@ -13,14 +13,11 @@
  */
 
 #define WIN32_LEAN_AND_MEAN
-/* #define NOCRYPT 
-#define NOSERVICE
-#define NOMCX
-#define NOIME */
 
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
+#include <combaseapi.h>
 #include <stdlib.h>
 #include <tchar.h>
 #include <stdio.h>
@@ -39,7 +36,6 @@ static INT_PTR CALLBACK ImgExpProc(HWND, UINT, WPARAM, LPARAM);
 /** Global variables ********************************************************/
 
 static HANDLE ghInstance;
-int coinited=0;
 HDC idc=NULL;
 HBITMAP ibmp;
 HBRUSH hbrush;
@@ -104,6 +100,8 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	ccx.hCursor = LoadCursor(NULL,IDC_CROSS);
     if (!RegisterClassEx(&ccx))
         return 1;
+
+	if(CoInitialize(NULL)!=S_OK) return 1;
 	
     /* The user interface is a modal dialog box */
     return DialogBox(hInstance, MAKEINTRESOURCE(DLG_MAIN), NULL, (DLGPROC)MainDlgProc);
@@ -142,7 +140,7 @@ int init_idc(HWND hDlg)
 	idc=CreateCompatibleDC(cdc);
 	ibmp=CreateCompatibleBitmap(cdc,irct.right,irct.bottom);
 	SelectObject(idc,ibmp);
-	hbrush=CreateSolidBrush(0xffffff);
+	hbrush=CreateSolidBrush(0x0000ff);
 	SelectObject(idc,hbrush);
 	Rectangle(idc,irct.left,irct.top,irct.right,irct.bottom);
 	ReleaseDC(hic,cdc);
@@ -155,8 +153,7 @@ int do_something(HWND hDlg)
 	OutputDebugString(_T("something"));
 	GetDlgItemText(hDlg,ID_EDH,fn,255);
 	fn[255]=0;
-	load_img(fn,coinited,&img_dc,&img_bmp);
-	coinited=1;
+	load_img(fn,&img_dc,&img_bmp);
 //	load_img(L"retro_t.png",0,&img_dc,&img_bmp);
 	if(img_dc==NULL) OutputDebugStringA("no img_dc");
 	InvalidateRect(GetDlgItem(hDlg,ID_IMG),&irct,FALSE);
@@ -181,7 +178,7 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     {
         case WM_INITDIALOG:
 			/* code to initialize the dialog. */
-			init_idc(hwndDlg);        
+			init_idc(hwndDlg);
             return TRUE;
 
         case WM_SIZE:

@@ -15,49 +15,42 @@ static void dbg_num(char *msg, unsigned long int n)
 }
 
 
-
-int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
+int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 {
-	wchar_t buf[260];
 	HRESULT hr;
 	/* WIM part */
-	IWICImagingFactory *iif;
-	IWICBitmapDecoder *iwbdec;
-	IWICBitmapFrameDecode *iwbframe;
+	IWICImagingFactory *iif=NULL;
+	IWICBitmapDecoder *iwbdec=NULL;
+	IWICBitmapFrameDecode *iwbframe=NULL;
 
 	IWICFormatConverter *ifc=NULL;
+	unsigned int fc;
 
+	wchar_t buf[260];
 
-	IWICComponentInfo *tci;		/* "temp" */
-	IWICPixelFormatInfo *pfi;	/* pixel format info interface */
+#ifdef DEBUG
+	IWICComponentInfo *tci=NULL;		/* "temp" */
+	IWICPixelFormatInfo *pfi=NULL;	/* pixel format info interface */
 	WICPixelFormatGUID pfuid;
-
-/*    IWICColorTransform *pcoltr = NULL;
-    IWICColorContext *pcsrc = NULL;
-    IWICColorContext *pcdst = NULL; */
-
-
+	UINT chcount,bpp;
+#endif
 
 	UINT w,h;
-	UINT chcount,bpp;
 
 	/* GDI part */
 	HDC hdci;
 	HBITMAP hBMP;
 	BITMAPINFO bi;
-	int xs,ys;
 	void *pxdata;
 
-	if(!coinited)
+/* should initialize from main */	
+/*	hr = CoInitialize(NULL);
+	if(hr!=S_OK)
 	{
-		hr = CoInitialize(NULL);
-		if(hr!=S_OK)
-		{
-			swprintf(buf,256,L"CoInitialize returned error: %d, 0x%x",hr,hr);
-			OutputDebugString(buf);
-			return -2;
-		}
-	}
+		swprintf(buf,256,L"CoInitialize returned error: %d, 0x%x",hr,hr);
+		OutputDebugString(buf);
+		return -2;
+	} */
 
 	hr = CoCreateInstance(&CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, (void**)&iif);
 	if(hr!=S_OK)
@@ -74,9 +67,14 @@ int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
 		OutputDebugString(buf);
 		return -1;
 	}
-#ifdef DEBUG
-	unsigned int fc;
 	iwbdec->lpVtbl->GetFrameCount(iwbdec,&fc);
+	if(fc<1)
+	{
+		swprintf(buf,256,L"No frames found");
+		OutputDebugString(buf);
+		return -1;
+	}
+#ifdef DEBUG
 	dbg_num("Frame count: ",fc);
 #endif
 
@@ -191,12 +189,10 @@ int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
 	/* GDI */
 	/* Device Context */
 	hdci=CreateCompatibleDC(0);
-	xs=w;
-	ys=h;
 	/* prepare for DIB generation */
 	bi.bmiHeader.biSize=sizeof(bi.bmiHeader);
-	bi.bmiHeader.biWidth=xs;
-	bi.bmiHeader.biHeight=-ys;
+	bi.bmiHeader.biWidth=w;
+	bi.bmiHeader.biHeight=-h;
 	bi.bmiHeader.biPlanes=1;
 	bi.bmiHeader.biBitCount=32;
 	bi.bmiHeader.biCompression=BI_RGB;
