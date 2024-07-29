@@ -178,7 +178,7 @@ int load_img(wchar_t *fn,int coinited, HDC *dhdc, HBITMAP *dhbmp)
 	}
 
 //   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGRA,WICBitmapDitherTypeNone,NULL,0.0f,0);
-   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGR,WICBitmapDitherTypeNone,NULL,0.0f,0);
+   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGR,WICBitmapDitherTypeNone,NULL,0.0f,WICBitmapPaletteTypeCustom);
 	if(hr!=S_OK)
 	{
 		swprintf(buf,256,L"CreateFormatConverter->Initialize returned error: %d, 0x%x",hr,hr);
