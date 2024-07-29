@@ -17,6 +17,7 @@ static void dbg_num(char *msg, unsigned long int n)
 
 int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 {
+	int rv=0;
 	HRESULT hr;
 	/* WIM part */
 	IWICImagingFactory *iif=NULL;
@@ -43,19 +44,10 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 	BITMAPINFO bi;
 	void *pxdata;
 
-/* should initialize from main */	
-/*	hr = CoInitialize(NULL);
-	if(hr!=S_OK)
-	{
-		swprintf(buf,256,L"CoInitialize returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -2;
-	} */
-
 	hr = CoCreateInstance(&CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, (void**)&iif);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CoCreateInstance returned error: %d, 0x%x",hr,hr);
+		swprintf(buf,256,L"CoCreateInstance returned error: %d, 0x%x - was CoInitialize called before this?",hr,hr);
 		OutputDebugString(buf);
 		return -1;
 	}
@@ -92,7 +84,6 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 #ifdef DEBUG
 	dbg_num("Width: ",w);
 	dbg_num("Height: ",h);
-#endif
 	/* fucking more interfaces to get to the fucking pixel data information */
 	iif->lpVtbl->CreateComponentInfo(iif,&pfuid,&tci);
 	if(hr!=S_OK)
@@ -113,59 +104,10 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 
 	pfi->lpVtbl->GetBitsPerPixel(pfi,&bpp);
 	pfi->lpVtbl->GetChannelCount(pfi,&chcount);
-#ifdef DEBUG
 	dbg_num("bpp: ",bpp);
 	dbg_num("channel count: ",chcount);
 #endif
 
-	/* color transform */
-	/* create objects */
-//	hr=iif->lpVtbl->CreateColorTransformer(iif,&pcoltr);
-//	if(hr!=S_OK)
-//	{
-//		swprintf(buf,256,L"CreateColorTransformer returned error: %d, 0x%x",hr,hr);
-//		OutputDebugString(buf);
-//		return -1;
-//	}
-//	hr=iif->lpVtbl->CreateColorContext(iif,&pcsrc);
-//	if(hr!=S_OK)
-//	{
-//		swprintf(buf,256,L"CreateColorContext returned error: %d, 0x%x",hr,hr);
-//		OutputDebugString(buf);
-//		return -1;
-//	}
-//	hr=iif->lpVtbl->CreateColorContext(iif,&pcdst);
-//	if(hr!=S_OK)
-//	{
-//		swprintf(buf,256,L"CreateColorContext returned error: %d, 0x%x",hr,hr);
-//		OutputDebugString(buf);
-//		return -1;
-//	}
-//
-//	/* initialize ColorContexts */
-//	hr=pcsrc->lpVtbl->InitializeFromExifColorSpace(pcsrc,1);
-//	if(hr!=S_OK)
-//	{
-//		swprintf(buf,256,L"ColorContext init returned error: %d, 0x%x",hr,hr);
-//		OutputDebugString(buf);
-//		return -1;
-//	}
-//	hr=pcdst->lpVtbl->InitializeFromExifColorSpace(pcdst,1);
-//	if(hr!=S_OK)
-//	{
-//		swprintf(buf,256,L"ColorContext init returned error: %d, 0x%x",hr,hr);
-//		OutputDebugString(buf);
-//		return -1;
-//	}
-//
-//	hr=pcoltr->lpVtbl->Initialize(pcoltr,(IWICBitmapSource *)iwbframe,pcsrc,pcdst,&GUID_WICPixelFormat32bppBGRA);
-//	if(hr!=S_OK)
-//	{
-//		swprintf(buf,256,L"Initialize color transform returned error: %d, 0x%x",hr,hr);
-//		OutputDebugString(buf);
-//		return -1;
-//	}
-//	
 	/* format converter */
 	hr=iif->lpVtbl->CreateFormatConverter(iif,&ifc);
 	if(hr!=S_OK)
@@ -175,8 +117,7 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 		return -1;
 	}
 
-//   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGRA,WICBitmapDitherTypeNone,NULL,0.0f,0);
-   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGR,WICBitmapDitherTypeNone,NULL,0.0f,WICBitmapPaletteTypeCustom);
+   hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGRA,WICBitmapDitherTypeNone,NULL,0.0f,WICBitmapPaletteTypeCustom);
 	if(hr!=S_OK)
 	{
 		swprintf(buf,256,L"CreateFormatConverter->Initialize returned error: %d, 0x%x",hr,hr);
@@ -192,7 +133,7 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 	/* prepare for DIB generation */
 	bi.bmiHeader.biSize=sizeof(bi.bmiHeader);
 	bi.bmiHeader.biWidth=w;
-	bi.bmiHeader.biHeight=-h;
+	bi.bmiHeader.biHeight=0-h;
 	bi.bmiHeader.biPlanes=1;
 	bi.bmiHeader.biBitCount=32;
 	bi.bmiHeader.biCompression=BI_RGB;
@@ -207,6 +148,7 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 		return -1;
 	}
 
+#ifdef DEBUG
 	BITMAP bmp;
 
 	GetObject(hBMP,sizeof(bmp),&bmp);
@@ -214,33 +156,19 @@ int load_img(wchar_t *fn, HDC *dhdc, HBITMAP *dhbmp)
 	dbg_num("created y: ",bmp.bmHeight);
 	dbg_num("created b: ",bmp.bmWidthBytes);
 	dbg_num("created bpp: ",bmp.bmBitsPixel);
+#endif
 
-/*	void *pxbuf2=calloc(w*h,4);
-	if(pxbuf2==NULL)
-	{
-		OutputDebugStringA("alloc failed");
-		return -1;
-	}
-	unsigned int *dbuf2=pxdata;
-	dbuf2[0]=0x808080;
-
-	hr=pcoltr->lpVtbl->CopyPixels(pcoltr,NULL,4*w,4*w*h,pxbuf2);
-	OutputDebugStringA("done pxbuf2"); */
-
-	/* since we forced bpp to 32 we know that stride must be 4*width */
+	/* since the bitmap was created with 32bpp, we know that stride must be 4*width and buffer size is 4*width*height */
 	hr=ifc->lpVtbl->CopyPixels(ifc,NULL,4*w,4*w*h,pxdata);
-//	hr=pcoltr->lpVtbl->CopyPixels(pcoltr,NULL,4*w,4*w*h,pxdata);
 	if(hr!=S_OK)
 	{
 		swprintf(buf,256,L"CopyPixels returned error: %d, 0x%x",hr,hr);
 		OutputDebugString(buf);
 		return -1;
 	}
-	OutputDebugStringA("done pxdata");
-
 	
 	SelectObject(hdci,hBMP);
 	*dhdc=hdci;
 	*dhbmp=hBMP;
-	return 0;
+	return rv;
 }

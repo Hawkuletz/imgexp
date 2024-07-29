@@ -132,10 +132,6 @@ int init_idc(HWND hDlg)
 	HDC cdc;
 	HWND hic=GetDlgItem(hDlg,ID_IMG);
 	if(GetClientRect(hic,&irct)==0) dbg_num("GetClientRect failed, lasterror is",GetLastError());
-	dbg_num("Rect left",irct.left);
-	dbg_num("Rect top",irct.top);
-	dbg_num("Rect right",irct.right);
-	dbg_num("Rect bottom",irct.bottom);
 	cdc=GetDC(hic);
 	idc=CreateCompatibleDC(cdc);
 	ibmp=CreateCompatibleBitmap(cdc,irct.right,irct.bottom);
@@ -213,6 +209,7 @@ static INT_PTR CALLBACK ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	PAINTSTRUCT ps;
 	HDC wdc;
 	BITMAP bmp;
+	HBITMAP hbmp;
 
 ;
     switch (uMsg)
@@ -222,7 +219,8 @@ static INT_PTR CALLBACK ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			wdc=BeginPaint(hWnd,&ps);
 			if(img_dc)
 			{
-				GetObject(img_bmp,sizeof(bmp),&bmp);
+				hbmp=GetCurrentObject(img_dc,OBJ_BITMAP);
+				GetObject(hbmp,sizeof(bmp),&bmp);
 				SetStretchBltMode(wdc,HALFTONE);
 				StretchBlt(wdc,0,0,irct.right,irct.bottom,img_dc,0,0,bmp.bmWidth,bmp.bmHeight,SRCCOPY);
 			}
