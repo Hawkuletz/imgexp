@@ -6,9 +6,9 @@ mkdir output 2>NUL:
 rem call "c:\Program Files\PellesC\Bin\povars32.bat"
 del "%PROGNAME%.exe"
 echo compiling %PROGNAME%
-pocc.exe -std:C11 -Tx86-coff -Ot -Ob1 -fp:precise -W1 -Gz -Ze -Go "%COMPOPT%" limg2.c -Fo"output\limg2.obj"
+pocc.exe -std:C11 -Tx86-coff -Ot -Ob1 -fp:precise -W1 -Gz -Ze -Go "%COMPOPT%" img2dc.c -Fo"output\img2dc.obj"
 pocc.exe -std:C11 -Tx86-coff -Ot -Ob1 -fp:precise -W1 -Gz -Ze -Go "%COMPOPT%" "%PROGNAME%.c" -Fo"output\%PROGNAME%.obj"
 porc.exe "%PROGNAME%.rc" -Fo"output\%PROGNAME%.res"
 echo linking
-polink.exe -subsystem:windows -machine:x86 "%PLIBS%" -out:"%PROGNAME%.exe" "output\%PROGNAME%.obj" "output\%PROGNAME%.res" "output\limg2.obj"
+polink.exe -subsystem:windows -machine:x86 "%PLIBS%" -out:"%PROGNAME%.exe" "output\%PROGNAME%.obj" "output\%PROGNAME%.res" "output\img2dc.obj"
 dir "%PROGNAME%.exe"
