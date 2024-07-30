@@ -79,11 +79,11 @@ int load_img(wchar_t *fn, HDC *dhdc)
 	/* now iwbframe should have our pixels, but first we need dimensions */
 	/* TODO: error checking here */
 	iwbframe->lpVtbl->GetSize(iwbframe,&w,&h);
-	iwbframe->lpVtbl->GetPixelFormat(iwbframe,&pfuid);
 
 #ifdef DEBUG
 	dbg_num("Width: ",w);
 	dbg_num("Height: ",h);
+	iwbframe->lpVtbl->GetPixelFormat(iwbframe,&pfuid);
 	/* chkdsking more interfaces to get to the chkdsking pixel data information (yes, double punnery, why not) */
 	iif->lpVtbl->CreateComponentInfo(iif,&pfuid,&tci);
 	if(hr!=S_OK)
