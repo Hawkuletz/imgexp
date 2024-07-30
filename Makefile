@@ -3,12 +3,14 @@ CC = CL
 LINK = LINK
 CFLAGS = /std:c17 /W3 /O2 /c
 DEFINES = /DUNICODE /D_UNICODE /DDEBUG
-LDFLAGS = 
 PLIBS = kernel32.lib advapi32.lib delayimp.lib user32.lib gdi32.lib comctl32.lib ole32.lib uuid.lib windowscodecs.lib
-OBJS = limg2.obj imgexp.obj
+OBJS = limg2.obj imgexp.obj imgexp.res
 PROGRAM = imgexp.exe
 
 all: $(PROGRAM)
+
+# any change to headers should trigger a full recompile
+$(OBJS):*.h
 
 .c.obj:
 	$(CC) $(CFLAGS) $(DEFINES) $*.c
@@ -16,5 +18,8 @@ all: $(PROGRAM)
 .rc.res:
 	$(RC) $*.rc
 
-imgexp.exe: imgexp.obj limg2.obj imgexp.res
-	$(LINK) -out:imgexp.exe imgexp.obj limg2.obj imgexp.res $(PLIBS)
+imgexp.exe: $(OBJS)
+	$(LINK) -out:imgexp.exe $(OBJS) $(PLIBS)
+
+clean:
+	del *.obj *.res *.exe

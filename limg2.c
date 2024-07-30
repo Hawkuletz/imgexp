@@ -19,51 +19,51 @@ int load_img(wchar_t *fn, HDC *dhdc)
 {
 	int rv=0;
 	HRESULT hr;
-	/* WIM part */
+
+	/* WIC vars */
 	IWICImagingFactory *iif=NULL;
 	IWICBitmapDecoder *iwbdec=NULL;
 	IWICBitmapFrameDecode *iwbframe=NULL;
 	IWICFormatConverter *ifc=NULL;
 	unsigned int fc;
 
-	wchar_t buf[260];
-
 #ifdef DEBUG
-	IWICComponentInfo *tci=NULL;		/* "temp" */
-	IWICPixelFormatInfo *pfi=NULL;	/* pixel format info interface */
+	IWICComponentInfo *tci=NULL;	/* "temp" component info to get PixelFormatInfo */
+	IWICPixelFormatInfo *pfi=NULL;
 	WICPixelFormatGUID pfuid;
 	UINT chcount,bpp;
 #endif
 
 	UINT w,h;
 
-	/* GDI part */
+	/* GDI vars */
 	HDC hdci;
 	HBITMAP hBMP;
 	BITMAPINFO bi;
 	void *pxdata;
 
+	/* WIC */
 	hr = CoCreateInstance(&CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, (void**)&iif);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CoCreateInstance returned error: %d, 0x%x - was CoInitialize called before this?",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("CoCreateInstance error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
 	
 	hr=iif->lpVtbl->CreateDecoderFromFilename(iif,fn,NULL,GENERIC_READ,WICDecodeMetadataCacheOnDemand,&iwbdec);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CreateDecoderFromFilename returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("CreateDecoderFromFilename error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
 	iwbdec->lpVtbl->GetFrameCount(iwbdec,&fc);
 	if(fc<1)
 	{
-		swprintf(buf,256,L"No frames found");
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("GetFrameCount error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
 #ifdef DEBUG
 	dbg_num("Frame count: ",fc);
@@ -72,33 +72,34 @@ int load_img(wchar_t *fn, HDC *dhdc)
 	hr=iwbdec->lpVtbl->GetFrame(iwbdec,0,&iwbframe);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"GetFrame returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("GetFrame error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
 	/* now iwbframe should have our pixels, but first we need dimensions */
 	/* TODO: error checking here */
 	iwbframe->lpVtbl->GetSize(iwbframe,&w,&h);
 	iwbframe->lpVtbl->GetPixelFormat(iwbframe,&pfuid);
+
 #ifdef DEBUG
 	dbg_num("Width: ",w);
 	dbg_num("Height: ",h);
-	/* fucking more interfaces to get to the fucking pixel data information */
+	/* chkdsking more interfaces to get to the chkdsking pixel data information (yes, double punnery, why not) */
 	iif->lpVtbl->CreateComponentInfo(iif,&pfuid,&tci);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CreateComponentInfo returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("CreateComponentInfo error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
 
 	/* pixel format interface */
 	hr=tci->lpVtbl->QueryInterface(tci,&IID_IWICPixelFormatInfo,(void **)&pfi);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CreateComponentInfo returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("QueryInterface error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
 
 	pfi->lpVtbl->GetBitsPerPixel(pfi,&bpp);
@@ -111,20 +112,18 @@ int load_img(wchar_t *fn, HDC *dhdc)
 	hr=iif->lpVtbl->CreateFormatConverter(iif,&ifc);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CreateFormatConverter returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("CreateFormatConverter error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
 
    hr=ifc->lpVtbl->Initialize(ifc,(IWICBitmapSource *)iwbframe,&GUID_WICPixelFormat32bppBGRA,WICBitmapDitherTypeNone,NULL,0.0f,WICBitmapPaletteTypeCustom);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CreateFormatConverter->Initialize returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("FormatConverter Initialize error:",hr);
+		rv=-1;
+		goto eofunc;
 	}
-
-	
 
 	/* GDI */
 	/* Device Context */
@@ -144,7 +143,8 @@ int load_img(wchar_t *fn, HDC *dhdc)
 	if(hBMP==NULL || pxdata==NULL)
 	{
 		OutputDebugString(_T("CreateDIBSection failed"));
-		return -1;
+		rv=-1;
+		goto eofunc;
 	}
 
 #ifdef DEBUG
@@ -161,12 +161,25 @@ int load_img(wchar_t *fn, HDC *dhdc)
 	hr=ifc->lpVtbl->CopyPixels(ifc,NULL,4*w,4*w*h,pxdata);
 	if(hr!=S_OK)
 	{
-		swprintf(buf,256,L"CopyPixels returned error: %d, 0x%x",hr,hr);
-		OutputDebugString(buf);
-		return -1;
+		dbg_num("CopyPixels error: ",hr);
+		rv=-1;
+		/* release bitmap and DC */
+		DeleteObject(hBMP);
+		DeleteDC(hdci);
+		goto eofunc;
 	}
 	
-	SelectObject(hdci,hBMP);
+	hBMP=SelectObject(hdci,hBMP);
+	if(hBMP) DeleteObject(hBMP);
 	*dhdc=hdci;
+eofunc:
+	if(ifc) ifc->lpVtbl->Release(ifc);
+	if(iwbframe) iwbframe->lpVtbl->Release(iwbframe);
+	if(iwbdec) iwbdec->lpVtbl->Release(iwbdec);
+	if(iif) iif->lpVtbl->Release(iif);
+#ifdef DEBUG
+	if(tci) tci->lpVtbl->Release(tci);
+	if(pfi) pfi->lpVtbl->Release(pfi);
+#endif
 	return rv;
 }

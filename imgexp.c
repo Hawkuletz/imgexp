@@ -36,11 +36,6 @@ static INT_PTR CALLBACK ImgExpProc(HWND, UINT, WPARAM, LPARAM);
 /** Global variables ********************************************************/
 
 static HANDLE ghInstance;
-HDC idc=NULL;
-HBITMAP ibmp;
-HBRUSH hbrush;
-RECT irct;
-
 HDC img_dc=NULL;
 
 /****************************************************************************
@@ -128,30 +123,24 @@ void dbg_dbl(char *msg, double n)
  **********************************/
 int init_idc(HWND hDlg)
 {
-	HDC cdc;
-	HWND hic=GetDlgItem(hDlg,ID_IMG);
-	if(GetClientRect(hic,&irct)==0) dbg_num("GetClientRect failed, lasterror is",GetLastError());
-	cdc=GetDC(hic);
-	idc=CreateCompatibleDC(cdc);
-	ibmp=CreateCompatibleBitmap(cdc,irct.right,irct.bottom);
-	SelectObject(idc,ibmp);
-	hbrush=CreateSolidBrush(0x0000ff);
-	SelectObject(idc,hbrush);
-	Rectangle(idc,irct.left,irct.top,irct.right,irct.bottom);
-	ReleaseDC(hic,cdc);
 	return 0;
 }
 
 int do_something(HWND hDlg)
 {
+	HBITMAP hbmp;
 	wchar_t fn[256];
-	OutputDebugString(_T("something"));
+	if(img_dc!=NULL)
+	{
+		hbmp=GetCurrentObject(img_dc,OBJ_BITMAP);
+		DeleteDC(img_dc);
+		DeleteObject(hbmp);
+	}
 	GetDlgItemText(hDlg,ID_EDH,fn,255);
 	fn[255]=0;
 	load_img(fn,&img_dc);
-//	load_img(L"retro_t.png",0,&img_dc,&img_bmp);
 	if(img_dc==NULL) OutputDebugStringA("no img_dc");
-	InvalidateRect(GetDlgItem(hDlg,ID_IMG),&irct,FALSE);
+	InvalidateRect(GetDlgItem(hDlg,ID_IMG),NULL,FALSE);
 	return 0;
 }
 
@@ -209,24 +198,19 @@ static INT_PTR CALLBACK ImgExpProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	HDC wdc;
 	BITMAP bmp;
 	HBITMAP hbmp;
+	RECT rct;
 
 ;
     switch (uMsg)
     {
 		case WM_PAINT:
-			if(!idc && !img_dc) return DefWindowProc(hWnd,uMsg,wParam,lParam);
+			if(!img_dc) return DefWindowProc(hWnd,uMsg,wParam,lParam);
+			if(GetClientRect(hWnd,&rct)==0) return FALSE;
 			wdc=BeginPaint(hWnd,&ps);
-			if(img_dc)
-			{
-				hbmp=GetCurrentObject(img_dc,OBJ_BITMAP);
-				GetObject(hbmp,sizeof(bmp),&bmp);
-				SetStretchBltMode(wdc,HALFTONE);
-				StretchBlt(wdc,0,0,irct.right,irct.bottom,img_dc,0,0,bmp.bmWidth,bmp.bmHeight,SRCCOPY);
-			}
-			else
-			{
-				BitBlt(wdc,0,0,irct.right,irct.bottom,idc,0,0,SRCCOPY);
-			}
+			hbmp=GetCurrentObject(img_dc,OBJ_BITMAP);
+			GetObject(hbmp,sizeof(bmp),&bmp);
+			SetStretchBltMode(wdc,HALFTONE);
+			StretchBlt(wdc,0,0,rct.right,rct.bottom,img_dc,0,0,bmp.bmWidth,bmp.bmHeight,SRCCOPY);
 			EndPaint(hWnd,&ps);
 			return TRUE;
 	}
