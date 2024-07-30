@@ -126,7 +126,6 @@ int load_img(wchar_t *fn, HDC *dhdc)
 	}
 
 	/* GDI */
-	/* Device Context */
 	hdci=CreateCompatibleDC(0);
 	/* prepare for DIB generation */
 	bi.bmiHeader.biSize=sizeof(bi.bmiHeader);
@@ -169,8 +168,7 @@ int load_img(wchar_t *fn, HDC *dhdc)
 		goto eofunc;
 	}
 	
-	hBMP=SelectObject(hdci,hBMP);
-	if(hBMP) DeleteObject(hBMP);
+	SelectObject(hdci,hBMP);
 	*dhdc=hdci;
 eofunc:
 	if(ifc) ifc->lpVtbl->Release(ifc);
