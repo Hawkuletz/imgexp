@@ -22,7 +22,7 @@
 #include <tchar.h>
 #include <stdio.h>
 #include "imgexp.h"
-#include "limg2.h"
+#include "img2dc.h"
 
 /* often used */
 #define NELEMS(a)  (sizeof(a) / sizeof((a)[0]))
