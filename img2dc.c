@@ -4,8 +4,6 @@
 #include <tchar.h>
 #include <stdio.h>
 
-/* note to self: check https://learn.microsoft.com/en-us/windows/win32/api/wincodec/nf-wincodec-iwicformatconverter-initialize */
-
 /* helper debug */
 static void dbg_num(char *msg, unsigned long int n)
 {
@@ -14,6 +12,13 @@ static void dbg_num(char *msg, unsigned long int n)
 	OutputDebugStringA(dbuf);
 }
 
+/* used to avoid calling CoInitialize multiple times */
+static int coinitialized = 0;
+int img_helper_init()
+{
+	if(!coinitialized && CoInitialize(NULL)!=S_OK) return 1;
+	return 0;
+}
 
 int load_img(wchar_t *fn, HDC *dhdc)
 {
